@@ -24,14 +24,18 @@ TODO:
 Implement Fractions
 
 LITERAL CALCULATION LIB BY MRtecno98
-Basic math with polinomials and monomials
+Basic math with Polynomials and monomials
 """
 
 from string import ascii_lowercase
 
+class AlgebricError(Exception) :
+    '''For errors in algebric calculation'''
+
 class Number :
     def __init__(self, n) :
-	    self.n = float(n)
+        #print("hEy Im A lItTlE nUmBeR")
+        self.n = float(n)
 		
     def __add__(self, other) :
         return self.n + other if type(other) == type(self) else \
@@ -169,7 +173,7 @@ class Monomial :
             if i.letter in varia.keys() :
                 varia[i.letter].exponent += i.exponent
             else :
-                varia[i.letter] = i
+                varia[i.letter] = Variable(i.letter, exponent=i.exponent)
                 letters.append(i.letter)
         letters.sort()
         for i in letters :
@@ -186,7 +190,7 @@ class Monomial :
     def __mul__(self, other) :
         if isinstance(other, Monomial) :
             prod = Monomial(self.coefficient * other.coefficient, \
-                            *(self.variables + other.variables))
+                            *(list(self.variables) + list(other.variables)))
         else :
             prod = Monomial(self.coefficient * other, *(self.variables))
         prod.reduce()
@@ -209,7 +213,7 @@ class Monomial :
             return Monomial(self.coefficient + mother.coefficient, \
                             *(self.variables))
         else :
-            return Polinomial(self, mother)
+            return Polynomial(self, mother)
 
     def __radd__(self, other) :
         mother = other
@@ -219,7 +223,7 @@ class Monomial :
             return Monomial(mother.coefficient + self.coefficient, \
                             *(self.variables))
         else :
-            return Polinomial(mother, self)
+            return Polynomial(mother, self)
 
     def __sub__(self, other) :
         return self + (-other)
@@ -254,28 +258,63 @@ class Monomial :
     def __neg__(self) :
         return Monomial(-self.coefficient, *(self.variables))
 
-class Polinomial :
+class Polynomial :
     def __init__(self, *monomials:Monomial) :
         self.monomials = monomials
 
     def __add__(self, other) :
         mother = other
-        if not isinstance(other, Polinomial) :
+        if not isinstance(other, Polynomial) :
             if not isinstance(other, Monomial) :
                 mother = Monomial(mother)
-            mother = Polinomial(mother)
-        sum_ = Polinomial(*(list(self.monomials) + list(mother.monomials)))
+            mother = Polynomial(mother)
+        sum_ = Polynomial(*(list(self.monomials) + list(mother.monomials)))
         return sum_
 
     def __radd__(self, other) :
         mother = other
-        if not isinstance(other, Polinomial) :
+        if not isinstance(other, Polynomial) :
             if not isinstance(other, Monomial) :
                 mother = Monomial(mother)
-            mother = Polinomial(mother)
-        sum_ = Polinomial(*(list(mother.monomials) + list(self.monomials)))
+            mother = Polynomial(mother)
+        sum_ = Polynomial(*(list(mother.monomials) + list(self.monomials)))
         return sum_
 
+    def __mul__(self, other) :
+        mother = other
+        if not isinstance(other, Polynomial) :
+            if not isinstance(other, Monomial) :
+                mother = Monomial(mother)
+            mother = Polynomial(mother)
+        mons = []
+        for m in self.monomials :
+            for m2 in mother.monomials :
+                mons.append(m*m2)
+        return Polynomial(*(mons))
+
+    def __rmul__(self, other) :
+        mother = other
+        if not isinstance(other, Polynomial) :
+            if not isinstance(other, Monomial) :
+                mother = Monomial(mother)
+            mother = Polynomial(mother)
+        mons = []
+        for m in mother.monomials :
+            for m2 in self.monomials :
+                mons.append(m*m2)
+        return Polynomial(*(mons))
+
+    def __pow__(self, other) :
+        if not isinstance(other, (Monomial, Polynomial)) :
+            n = Number(other)
+            total = self
+            for i in range(int(n - 1)) :
+                total *= self
+            total.minimalize()
+            return total
+        else :
+            raise AlgebricError("Cannot solve a power with non-numeric exponent")
+        
     def sign_mons(self) :
         return [i for i in self.monomials if i.coefficient != 0]
     
@@ -294,7 +333,7 @@ class Polinomial :
                          else str(i.coefficient)
             mania[identifier] = i if not identifier in mania.keys() else \
                                 mania[identifier] + i \
-                                if not isinstance(mania[identifier] + i, Polinomial) \
+                                if not isinstance(mania[identifier] + i, Polynomial) \
                                 else i
             if not identifier in letters : letters.append(identifier)
         letters.sort()
@@ -315,7 +354,7 @@ class Polinomial :
         return str_pol
 
     def __repr__(self) :
-        return "Polinomial({0})".format(str(self))
+        return "Polynomial({0})".format(str(self))
 
     
     
