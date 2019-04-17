@@ -112,6 +112,9 @@ class Number :
 
     def __ge__(self, other) :
         return self.n >= float(other)
+
+    def __abs__(self) :
+        return Number(abs(self.n))
 	    
     def __int__(self) :
         return int(self.n)
@@ -264,6 +267,15 @@ class Polinomial :
         sum_ = Polinomial(*(list(self.monomials) + list(mother.monomials)))
         return sum_
 
+    def __radd__(self, other) :
+        mother = other
+        if not isinstance(other, Polinomial) :
+            if not isinstance(other, Monomial) :
+                mother = Monomial(mother)
+            mother = Polinomial(mother)
+        sum_ = Polinomial(*(list(mother.monomials) + list(self.monomials)))
+        return sum_
+
     def sign_mons(self) :
         return [i for i in self.monomials if i.coefficient != 0]
     
@@ -277,10 +289,14 @@ class Polinomial :
         mania = {}
         letters = []
         for i in self.monomials :
-            identifier = i.variables[0].letter if len(i.variables) > 0 \
+            identifier = "".join([str(i) for i in i.variables]) \
+                         if len(i.variables) > 0 \
                          else str(i.coefficient)
-            mania[identifier] = i
-            letters.append(identifier)
+            mania[identifier] = i if not identifier in mania.keys() else \
+                                mania[identifier] + i \
+                                if not isinstance(mania[identifier] + i, Polinomial) \
+                                else i
+            if not identifier in letters : letters.append(identifier)
         letters.sort()
         self.monomials = [mania[i] for i in letters]
 
