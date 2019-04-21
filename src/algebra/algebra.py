@@ -204,6 +204,14 @@ class Monomial :
         prod.reduce()
         return prod
 
+    def __pow__(self, other) :
+        if isinstance(other, (Monomial, Polynomial)) :
+            raise AlgebricError("Can't raise to a not-number")
+        res = self
+        for i in range(other - 1) :
+            res = res * self
+        return res
+
     def __add__(self, other) :
         mother = other
         if not isinstance(other, Monomial) :
