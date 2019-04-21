@@ -34,7 +34,6 @@ class AlgebricError(Exception) :
 
 class Number :
     def __init__(self, n) :
-        #print("hEy Im A lItTlE nUmBeR")
         self.n = float(n)
 		
     def __add__(self, other) :
