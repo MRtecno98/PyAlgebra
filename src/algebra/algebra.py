@@ -29,16 +29,34 @@ Basic math with Polynomials and monomials
 
 from string import ascii_lowercase
 
+#Improved sum function
+sum_ = sum
+def sum(*iterable) :
+    iterable = list(iterable)
+    for i in iterable :
+        try :
+            iter(i)
+            iterable[iterable.index(i)] = sum(*i)
+        except TypeError :
+            continue
+    return sum_(iterable)
+
 class AlgebricError(Exception) :
     '''For errors in algebric calculation'''
 
 class Number :
     def __init__(self, n) :
         self.n = float(n)
-		
+
+    def factorize(self) :
+        pass
+    
     def __add__(self, other) :
-        return self.n + other if type(other) == type(self) else \
-                Number(self.n + other)
+        try :
+            return self.n + other if type(other) == type(self) else \
+                    Number(self.n + other)
+        except TypeError :
+            return self.n + other
 	
     def __radd__(self, other) :
         return Number(other + self.n)
@@ -216,7 +234,9 @@ class Monomial :
         mother = other
         if not isinstance(other, Monomial) :
             mother = Monomial(other)
-        if self.sign_vars() == mother.sign_vars() :
+        if self.sign_vars() == mother.sign_vars() \
+                or (mother.coefficient == 0 and
+                        len(mother.sign_vars()) == 0) :
             return Monomial(self.coefficient + mother.coefficient, \
                             *(self.variables))
         else :
@@ -226,7 +246,9 @@ class Monomial :
         mother = other
         if not isinstance(other, Monomial) :
             mother = Monomial(other)
-        if self.sign_vars() == mother.sign_vars() :
+        if self.sign_vars() == mother.sign_vars() \
+                or (mother.coefficient == 0 and
+                        len(mother.sign_vars()) == 0) :
             return Monomial(mother.coefficient + self.coefficient, \
                             *(self.variables))
         else :
@@ -264,6 +286,7 @@ class Monomial :
 
     def __neg__(self) :
         return Monomial(-self.coefficient, *(self.variables))
+    
 
 class Polynomial :
     def __init__(self, *monomials:Monomial) :
