@@ -26,7 +26,7 @@ from setuptools import setup
 
 setup(
     name="PyAlgebra",
-    version="0.1",
+    version="0.2",
     description="Literal Calculation with Monomials and Polinomials",
     author="MRtecno98",
     author_email="mr.tecno98@gmail.com",
