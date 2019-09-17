@@ -19,372 +19,150 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
 FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
 IN THE SOFTWARE.
 
-
-TODO:
-Implement Fractions
-
-LITERAL CALCULATION LIB BY MRtecno98
+LITERAL CALCULATION LIB 2.0 BY MRtecno98
 Basic math with Polynomials and monomials
 """
 
-from string import ascii_lowercase
+import math
 
-#Improved sum function
-sum_ = sum
-def sum(*iterable) :
-    iterable = list(iterable)
-    for i in iterable :
-        try :
-            iter(i)
-            iterable[iterable.index(i)] = sum(*i)
-        except TypeError :
-            continue
-    return sum_(iterable)
+def equal(*elements) :
+    if len(elements) < 2 : return True
+    else : return elements[0] == elements[1] \
+         and equal(*elements[1:])
 
-class AlgebricError(Exception) :
-    '''For errors in algebric calculation'''
+def mul(*numbers) :
+	if len(numbers) < 1 : return 1
+	else : return numbers[0] * mul(*numbers[1:])
 
-class Number :
-    def __init__(self, n) :
-        self.n = float(n)
+def gcd(first, *others) :
+    if len(others) < 1 : return first
+    return gcd(math.gcd(first, others[0]), *others[1:])
 
-    def factorize(self) :
-        pass
-    
-    def __add__(self, other) :
-        try :
-            return self.n + other if type(other) == type(self) else \
-                    Number(self.n + other)
-        except TypeError :
-            return self.n + other
-	
-    def __radd__(self, other) :
-        return Number(other + self.n)
-	    
-    def __mul__(self, other) :
-        prod = 0
-        for i in range(int(other)) :
-            prod+=self
-        return prod if type(other) == type(self) else \
-                Number(prod)
-	
-    def __rmul__(self, other) :
-        prod = 0
-        for i in range(int(other)) :
-            prod+=self
-        return Number(prod)
-	    
-    def __sub__(self, other) :
-        return self.__add__(-other)
-	
-    def __rsub__(self, other) :
-        return self.__radd__(-other)
+def lcm(first, *others) :
+	if len(others) < 1 : return first
+	return lcm(int(mul(first, others[0]) / \
+                       gcd(first, others[0])), *others[1:])
 
-    def __truediv__(self, other) :
-        return self.n / other if type(other) == type(self) else \
-                Number(self.n / other)
-	
-    def __rtruediv__(self, other) :
-        return Number(other / self.n)
 
-    def __mod__(self, other) :
-        return self.n % other if type(other) == type(self) else \
-                Number(self.n % other)
-	
-    def __rmod__(self, other) :
-        return Number(other % self.n)
+class AlgebricException(Exception) :
+    "For Algebric errors"
 
-    def __pow__(self, other) :
-        pow_ = 1
-        for i in range(int(other)) :
-            pow_ = pow_*self
-        return pow_ if type(other) == type(self) else \
-                Number(pow_)
-	
-    def __rpow__(self, other) :
-        pow_ = 1
-        for i in range(int(other)) :
-            pow_ = pow_*self
-        return Number(pow_)
+class Number() :
+    def __init__(self, numerator, denominator=1) :
 
-    def __neg__(self) :
-        return Number(-self.n)
-	    
-    def __str__(self) :
-        return str(self.n if self.n % 1 != 0 else int(self.n))
+        if isinstance(numerator, Number) and numerator.den == 1 :
+            numerator = int(numerator.real_value())
 
-    def __repr__(self) :
-        return "Number({0})".format(str(self))
+        if isinstance(denominator, Number) and denominator.den == 1 :
+            denominator = int(denominator.real_value())
+        
+        self.num = numerator
+        self.den = denominator
+
+    def real_value(self) :
+        return self.num / self.den
+
+    def reduce(self) :
+        for i in range(min(self.num, self.den), 0, -1) :
+            if self.is_reducible_by(i) :
+                   return self.reduce_by(i)
+
+    def reduce_by(self, red) :
+        if not self.is_reducible_by(red) :
+            raise AlgebricException(repr(self) + " is not reducible by "
+                                    + repr(red))
+        return Number(int(self.num / red), int(self.den / red))
+
+    def is_reducible_by(self, red) :
+        return self.num % red == 0 and \
+            self.den % red == 0
+
+    def reduce_to_common(self, *others) :
+        others = [self] + [Number(i) \
+                  if not isinstance(i,Number) else i for i in others]
+        cden = lcm(*[fract.den for fract in others])
+        return tuple([Number(int((cden/other.den)*other.num), cden) \
+                      for other in others])
+
+    def _get_reduced_numerators(self, *others) :
+        return [i.num for i in self.reduce_to_common(*others)]
+
+    def opposite(self) :
+        return Number(self.den, self.num)
 
     def __eq__(self, other) :
-        if not (type(other) == type(0) or type(other) == type(self)) :
-            return False
-        on = other.n if type(other) == type(self) else other
-        return self.n == on
+        return equal(*self._get_reduced_numerators(other))
 
     def __lt__(self, other) :
-        return self.n < float(other)
-
-    def __gt__(self, other) :
-        return self.n > float(other)
+        a,b = self._get_reduced_numerators(other)
+        return a < b
 
     def __le__(self, other) :
-        return self.n <= float(other)
+        a,b = self._get_reduced_numerators(other)
+        return a <= b
+
+    def __gt__(self, other) :
+        a,b = self._get_reduced_numerators(other)
+        return a > b
 
     def __ge__(self, other) :
-        return self.n >= float(other)
-
-    def __abs__(self) :
-        return Number(abs(self.n))
-	    
-    def __int__(self) :
-        return int(self.n)
-
-    def __float__(self) :
-        return float(self.n)
-
-class Variable :
-    def __init__(self, letter:str, exponent=Number(1)) :
-        if not ((len(letter) == 1) and letter in ascii_lowercase)  : raise Exception("Illegal variable: {0}".format(letter))
-        self.letter = letter
-        self.exponent = exponent
-
-    def __eq__(self, other) :
-        return self.letter == other.letter and self.exponent == other.exponent
-
-    def __neg__(self) :
-        return Variable(self.letter, exponent=-self.exponent)
-
-    def __str__(self) :
-        return (self.letter + "^" + str(self.exponent)) \
-               if self.exponent != 1 else self.letter
-
-    def __repr__(self) :
-        return "Variable({0})".format(str(self))
-
-class Monomial :
-    def __init__(self, coefficient:Number, *variables:Variable) :
-        self.coefficient = coefficient if isinstance(coefficient, Number) \
-                           else Number(coefficient)
-        self.variables = variables
-
-    def __str__(self) :
-        return (str(self.coefficient) if self.coefficient != 1 \
-                or self.sign_vars() == [] else "") \
-               + "".join([str(i) for i in self.variables])
-
-    def __repr__(self) :
-        return "Monomial({0})".format(str(self))
-
-    def sign_vars(self) :
-        return [i for i in self.variables if i.exponent != 0]
-
-    def __abs__(self) :
-        return Monomial(abs(self.coefficient), *(self.variables))
-    
-    def reduce(self) :
-        varia = {}
-        letters = []
-        reduced_vars = []
-        for i in self.variables :
-            if i.letter in varia.keys() :
-                varia[i.letter].exponent += i.exponent
-            else :
-                varia[i.letter] = Variable(i.letter, exponent=i.exponent)
-                letters.append(i.letter)
-        letters.sort()
-        for i in letters :
-            reduced_vars.append(varia[i])
-        self.variables = reduced_vars
-
-    def minimalize(self) :
-        self.variables = self.sign_vars()
-
-    def regroup(self) :
-        self.reduce()
-        self.minimalize()
-
-    def __mul__(self, other) :
-        if isinstance(other, Monomial) :
-            prod = Monomial(self.coefficient * other.coefficient, \
-                            *(list(self.variables) + list(other.variables)))
-        else :
-            prod = Monomial(self.coefficient * other, *(self.variables))
-        prod.reduce()
-        return prod
-
-    def __rmul__ (self, other) :
-        if isinstance(other, Monomial) :
-            prod = Monomial(other.coefficient * self.coefficient , \
-                            *(other.variables + self.variables))
-        else :
-            prod = Monomial(other * self.coefficient, *(self.variables))
-        prod.reduce()
-        return prod
-
-    def __pow__(self, other) :
-        if isinstance(other, (Monomial, Polynomial)) :
-            raise AlgebricError("Can't raise to a not-number")
-        res = self
-        for i in range(other - 1) :
-            res = res * self
-        return res
+        a,b = self._get_reduced_numerators(other)
+        return a >= b
 
     def __add__(self, other) :
-        mother = other
-        if not isinstance(other, Monomial) :
-            mother = Monomial(other)
-        if self.sign_vars() == mother.sign_vars() \
-                or (mother.coefficient == 0 and
-                        len(mother.sign_vars()) == 0) :
-            return Monomial(self.coefficient + mother.coefficient, \
-                            *(self.variables))
-        else :
-            return Polynomial(self, mother)
+        if not isinstance(other, Number) :
+            other = Number(other)
+        a,b = self.reduce_to_common(other)
+        return Number(a.num + b.num, a.den)
 
     def __radd__(self, other) :
-        mother = other
-        if not isinstance(other, Monomial) :
-            mother = Monomial(other)
-        if self.sign_vars() == mother.sign_vars() \
-                or (mother.coefficient == 0 and
-                        len(mother.sign_vars()) == 0) :
-            return Monomial(mother.coefficient + self.coefficient, \
-                            *(self.variables))
-        else :
-            return Polynomial(mother, self)
+        return self.__add__(other)
 
     def __sub__(self, other) :
-        return self + (-other)
+        return self.__add__(-other)
 
     def __rsub__(self, other) :
-        return other + (-self)
-
-    def __truediv__(self, other) :
-        mother = other if isinstance(other, Monomial) else Monomial(other)
-        mother.reduce()
-        varia = {i.letter : i for i in self.variables}
-        for i in mother.variables :
-            if i.letter in varia.keys() :
-                varia[i.letter].exponent -= i.exponent
-            else :
-                varia[i.letter] = -i
-        return Monomial(int(self.coefficient / mother.coefficient), \
-                        *(list(varia.values())))
-
-    def __rtruediv__(self, other) :
-        mother = other if isinstance(other, Monomial) else Monomial(other)
-        mother.reduce()
-        varia = {i.letter : i for i in mother.variables}
-        for i in self.variables :
-            if i.letter in varia.keys() :
-                varia[i.letter].exponent -= i.exponent
-            else :
-                varia[i.letter] = -i
-        return Monomial(int(mother.coefficient / self.coefficient), \
-                        *(list(varia.values())))
+        return (-self).__add__(other)
 
     def __neg__(self) :
-        return Monomial(-self.coefficient, *(self.variables))
-    
-
-class Polynomial :
-    def __init__(self, *monomials:Monomial) :
-        self.monomials = monomials
-
-    def __add__(self, other) :
-        mother = other
-        if not isinstance(other, Polynomial) :
-            if not isinstance(other, Monomial) :
-                mother = Monomial(mother)
-            mother = Polynomial(mother)
-        sum_ = Polynomial(*(list(self.monomials) + list(mother.monomials)))
-        return sum_
-
-    def __radd__(self, other) :
-        mother = other
-        if not isinstance(other, Polynomial) :
-            if not isinstance(other, Monomial) :
-                mother = Monomial(mother)
-            mother = Polynomial(mother)
-        sum_ = Polynomial(*(list(mother.monomials) + list(self.monomials)))
-        return sum_
+        return Number(-self.num, self.den)
 
     def __mul__(self, other) :
-        mother = other
-        if not isinstance(other, Polynomial) :
-            if not isinstance(other, Monomial) :
-                mother = Monomial(mother)
-            mother = Polynomial(mother)
-        mons = []
-        for m in self.monomials :
-            for m2 in mother.monomials :
-                mons.append(m*m2)
-        return Polynomial(*(mons))
+        if not isinstance(other, Number) :
+            other = Number(other)
+        return Number(self.num*other.num,
+                      self.den*other.den)
 
     def __rmul__(self, other) :
-        mother = other
-        if not isinstance(other, Polynomial) :
-            if not isinstance(other, Monomial) :
-                mother = Monomial(mother)
-            mother = Polynomial(mother)
-        mons = []
-        for m in mother.monomials :
-            for m2 in self.monomials :
-                mons.append(m*m2)
-        return Polynomial(*(mons))
+        return self.__mul__(other)
+
+    def __truediv__(self, other) :
+        if not isinstance(other, Number) :
+            other = Number(other)
+        return self.__mul__(other.opposite())
+
+    def __rtruediv__(self, other) :
+        return self.opposite().__mul__(other)
+
+    def __abs__(self) :
+        return Number(abs(self.num), abs(self.den))
 
     def __pow__(self, other) :
-        if not isinstance(other, (Monomial, Polynomial)) :
-            n = Number(other)
-            total = self
-            for i in range(int(n - 1)) :
-                total *= self
-            total.minimalize()
-            return total
-        else :
-            raise AlgebricError("Cannot solve a power with non-numeric exponent")
-        
-    def sign_mons(self) :
-        return [i for i in self.monomials if i.coefficient != 0]
-    
-    def reduce(self) :
-        p.monomials = p.sign_mons()
-        for i in self.monomials :
-            i.reduce()
-            i.variables = i.sign_vars()
-
-    def regroup(self) :
-        mania = {}
-        letters = []
-        for i in self.monomials :
-            identifier = "".join([str(i) for i in i.variables]) \
-                         if len(i.variables) > 0 \
-                         else str(i.coefficient)
-            mania[identifier] = i if not identifier in mania.keys() else \
-                                mania[identifier] + i \
-                                if not isinstance(mania[identifier] + i, Polynomial) \
-                                else i
-            if not identifier in letters : letters.append(identifier)
-        letters.sort()
-        self.monomials = [mania[i] for i in letters]
-
-    def minimalize(self) :
-        self.reduce()
-        self.regroup()
+        if isinstance(other, Number) :
+            other = other.real_value()
+        return Number(self.num**other, self.den**other)
+        #TODO: Add decimal conversion to number on constructor
+            
+    def __int__(self) :
+        return int(self.real_value())
+    def __float__(self) :
+        return float(self.real_value())
 
     def __str__(self) :
-        str_pol = str()
-        for s in self.monomials :
-            if self.monomials.index(s) > 0 :
-                str_pol += (" + " if s.coefficient > 0 else " - ")
-                str_pol += str(abs(s))
-            else :
-                str_pol += str(s)
-        return str_pol
-
+        return str(self.num) + (("/" + str(self.den))
+                                if self.den != 1 else "")
     def __repr__(self) :
-        return "Polynomial({0})".format(str(self))
+        return "Number(" + str(self) + ")"
 
     
     
