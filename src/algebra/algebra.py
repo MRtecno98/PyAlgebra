@@ -484,6 +484,10 @@ class Matrix() :
     def get_line(self, line) :
         return self.raw_matrix[line-1]
 
+    def get_algebric_complement(self, line, column) :
+        return (-1)**(line+column) * \
+            self.get_lower_complementar(line, column)
+
     def get_determinant(self) :
         if not self.is_squared() :
             raise TypeError("Can't calculate determinant of non-squared matrix")
@@ -495,8 +499,7 @@ class Matrix() :
             column = 1
             for line in range(1, self.get_dimensions()[0]+1) :
                 det += self[line, column] * \
-                       (-1)**(line+column) * \
-                       self.get_lower_complementar(line, column)
+                       self.get_algebric_complement(line, column)
             return det
 
     def get_lower_complementar(self, line, column) :
@@ -510,8 +513,12 @@ class Matrix() :
             if nline : res.append(nline)
         return Matrix(res).get_determinant()
 
-    def get_complementary_minor(self, line, column) :
-        pass #TODO: CONTINUE
+    def get_inverse_matrix(self) :
+        dims = self.get_dimensions()
+        return 1/self.get_determinant() * \
+               Matrix([[self.get_algebric_complement(line, column) \
+                        for column in range(1,dims[1]+1)] \
+                       for line in range(1,dims[0]+1)])
 
     def __getitem__(self, key) :
         if sum(key) < 2 : raise TypeError("Matrix index can't be 0")
@@ -607,7 +614,4 @@ class Matrix() :
 
     def __rsub__(self, other) :
         return other + (-self)
-            
-            
-        
     
